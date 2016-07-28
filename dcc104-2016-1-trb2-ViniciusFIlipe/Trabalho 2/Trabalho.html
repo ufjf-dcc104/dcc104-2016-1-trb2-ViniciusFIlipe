@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>
+			Trabalho 02
+		</title>
+		<style>
+			canvas { border: 1px solid black; background-color: black; } body{ width:
+			500px; margin: auto; }
+		</style>
+        
+		<script src="Sprite.js">
+		                
+		</script>
+		<script src="Imagens.js">
+		                
+		</script>
+        <script src="Variaveis.js">
+		                
+		</script>
+        <script src="Funcoes.js">
+		                
+		</script>
+        <script src="Controle.js">
+		                
+		</script>
+	</head>
+	<body>
+		<h1>
+			Trabalho 02
+		</h1>
+		<canvas width="700" height="500">
+			Seu navegador não tem suporte ao canvas! Atualize seu navegador.
+		</canvas>
+		<script>
+            var tela = document.getElementsByTagName("canvas")[0];
+            var ctx = tela.getContext("2d");
+            var fps = 50;
+            var dt = 1 / fps;
+            function passo() {
+                if (cont < 0) {
+                    pc.mover();
+                    pc2.mover();
+                    if (speed != undefined) 
+                        speed.mover();
+                    mina.mover();
+                    if (existe === 0)
+                        vida.mover();
+                    for (var j in tiros){
+                        tiros[j].mover();
+                    }
+                    for (var j in tiros2){
+                        tiros2[j].mover();
+                    }
+                }
+                if (existe === 0)
+                    vida.restricoes();
+                pc.restricoes();
+                pc2.restricoes();
+                if (speed != undefined)
+                    speed.restricoes();
+                for (var j in tiros) {
+                    tiros[j].restricoes();
+                }
+                for (var j in tiros2) {
+                    tiros2[j].restricoes();
+                }
+                //Limpar a tela
+                ctx.clearRect(0, 0, tela.width, tela.height);
+                ctx.drawImage(star, 0, 0, 700, 500, 0, 0 + lin, 700, 500);
+                ctx.drawImage(star, 0, 0, 700, 500, 0, 0 + lin - 500, 700, 500);
+                if (lin >= 500) {
+                    lin = 0;
+                } else {
+                    lin += 50 * dt;
+                }
+                for (var j in tiros) {
+                    tiros[j].desenhar();
+                }
+                for (var j in tiros2) {
+                    tiros2[j].desenhar();
+                }
+                if (speed != undefined)
+                    speed.desenhar();
+                mina.desenhar();
+                pc.desenhar();
+                pc2.desenhar();
+                if (existe === 0) 
+                    vida.desenhar();
+                for (var j in tiros2) {
+                    if (tiros2[j].colidiuComCircular(pc)&& pc.imune === false) {
+                        tiros2[j].y = -1200;
+                        pc.y = 1200;
+                        pc.x = 250;
+                        if (pc.danificado <= 0) 
+                            pc2.ponto++;
+                        pc.danificado = 2;
+                    }
+                }
+                for (var j in tiros) {
+                    if (tiros[j].colidiuComCircular(pc2) && pc2.imune === false) {
+                        tiros[j].y = -1200;
+                        pc2.x = 250;
+                        pc2.y = -100;
+                        if (pc2.danificado <= 0) 
+                            pc.ponto++;
+                        pc2.danificado = 2;
+                    }
+                }
+                for (var j in tiros2) {
+                    for (var i in tiros) {
+                        if (tiros2[j].colidiuComCircular(tiros[i])) {
+                            tiros2[j].y = -1200;
+                            tiros[i].y = -1200;
+                        }
+                    }
+                }
+                if (pc.danificado <= 0)
+                    pc.imune = false;
+                if (pc2.danificado <= 0)
+                    pc2.imune = false;
+                if (existe === 0) {
+                    if (pc.colidiuComCircular(vida)) {
+                        pc.danificado = 10;
+                        pc.imune = true;
+                        existe = 1;
+                        vida = new Sprite();
+                        vida.temp = 10;
+                    }
+                    if (pc2.colidiuComCircular(vida)) {
+                        pc2.danificado = 10;
+                        pc2.imune = true;
+                        existe = 1;
+                        vida = new Sprite();
+                        vida.temp = 10;
+                    }
+                }
+                if (pc.colidiuComCircular(mina) && pc.imune === false) {
+                    mina.desenhar = function() {
+                        ctx.drawImage(imgExplosao, this.x - this.raio, this.y - this.raio, 2 * this.raio, 2 * this.raio);
+                    };
+                    mina.vy = 0;
+                    mina.temp = 2;
+                    pc.y = 1200;
+                    pc.x = 250 - mina.x;
+                    if (pc.danificado <= 0)
+                        pc2.ponto++;
+                    pc.danificado = 2;
+                }
+                if (pc2.colidiuComCircular(mina) && pc2.imune === false) {
+                    mina.desenhar = function() {
+                        ctx.drawImage(imgExplosao, this.x - this.raio, this.y - this.raio, 2 * this.raio, 2 * this.raio);
+                    };
+                    mina.vy = 0;
+                    mina.temp = 2;
+                    pc2.x = 250 - mina.x;
+                    pc2.y = -100;
+                    if (pc2.danificado <= 0) pc.ponto++;
+                    pc2.danificado = 2;
+                }
+                if (speed != undefined) {
+                    if (pc.colidiuComCircular(speed)) {
+                        speedtemp = 19;
+                        speed.vy = 0;
+                        identificador = 1;
+                        speed.y = -200;
+                    }
+                    if (pc2.colidiuComCircular(speed)) {
+                        speedtemp = 19;
+                        speed.vy = 0;
+                        identificador = 2;
+                        speed.y = -200;
+                    }
+                }
+                if (speedtemp > 13) {
+                    if (identificador === 1) {
+                        ctx.fillStyle = "green";
+                        ctx.strokeStyle = "green";
+                        ctx.lineWidth = 1;
+                        ctx.font = "15px Arial";
+                        escreve("LENTIDÃO!", pc.x - 40, pc.y + 28);
+                        pc.vx = 2;
+                        pc.vy = 2;
+                    } else if (identificador === 2) {
+                        ctx.fillStyle = "green";
+                        ctx.strokeStyle = "green";
+                        ctx.lineWidth = 1;
+                        ctx.font = "15px Arial";
+                        escreve("LENTIDÃO!", pc2.x - 40, pc2.y - 26);
+                        pc2.vx = 2;
+                        pc2.vy = 2;
+                    }
+                }
+                desenhaPlacar();
+                if (vida.temp <= 0) {
+                    vida.temp = 10;
+                    criaVida();
+                }
+                if (mina.temp <= 0) {
+                    criaMina();
+                }
+                if (speedtemp <= 0)
+                    criaSpeed();
+                speedtemp -= dt;
+                cont -= dt;
+                vida.temp -= dt;
+                mina.temp -= dt;
+                pc.canhao -= dt;
+                pc2.canhao -= dt;
+                for (t in tiros) {
+                    if (tiros[t].y < 0)
+                        tiros.splice(t, 1);
+                }
+                for (t in tiros2) {
+                    if (tiros2[t].y < 0) 
+                        tiros2.splice(t, 1);
+                }
+                telaInicial();
+            }
+            var jogo = setInterval(passo, 1000 / fps);
+            addEventListener("keydown", teclaPressionada);
+            addEventListener("keyup", teclaSolta);
+		</script>
+	</body>
+
+</html>

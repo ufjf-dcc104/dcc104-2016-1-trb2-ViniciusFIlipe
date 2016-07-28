@@ -1,0 +1,28 @@
+
+                            var cont = 10;
+                            var pc = new Sprite();
+                            var pc2 = new Sprite();
+                            var vida = new Sprite();
+                            var mina = new Sprite();
+                            var speed;
+                            var existe = 1;
+                            pc.imune = false;
+                            pc2.imune = false;
+                            pc.danificado = 0;
+                            pc2.danificado = 0;
+                            var excluir = [];
+                            var tiros = [];
+                            var tiros2 = [];
+                            pc.raio = 25;
+                            pc2.raio = 25;
+                            speedtemp = 13;
+                            pc2.y = -100;
+                            mina.y = -100;
+                            pc.canhao = 0;
+                            pc2.canhao = 0;
+                            vida.temp = 23;
+                            mina.temp = 25;
+                            pc2.ponto = 0;
+                            pc.ponto = 0;
+                            var indentificador = 0;
+                            var lin = 0;

@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Trabalho 01</title>
+        <style>
+            canvas {
+                border: 1px solid black;
+                background-color: black;
+                background-image: url("/home/vinicius/Área de Trabalho/Trabalho/fundo.png");
+                /* background-image: url("/home/vinicius/Área de Trabalho/spr_stars01.png");*/
+            }
+            body{
+                width: 500px;
+                margin: auto;
+            }
+
+        </style>
+        <script src="Sprite.js"></script>
+        <script src="Imagens.js"></script>
+    </head>
+    <body>
+        <h1>Trabalho 01</h1>
+        <canvas width="500" height="500">
+            Seu navegador não tem suporte ao canvas!
+            Atualize seu navegador.
+        </canvas>
+
+
+
+        <script>
+
+            var tela = document.getElementsByTagName("canvas")[0];
+            var ctx = tela.getContext("2d");
+            var fps = 50;
+            var dt = 1 / fps;
+            var pc = new Sprite();
+            var vida = new Sprite();
+            var existe = 1;
+            pc.danificado = 0;
+            var inimigos = [];
+            var excluir = [];
+            var tiros = [];
+            pc.pontos = 0;
+            pc.vidas = 3;
+            pc.canhao = 0;
+            vida.temp = 10;
+            var inTemp = 20;
+            //multiplicador de pontos
+            var mult = 0;
+            //varivel ultilizada para o nivel
+            var k = 6;
+
+            function criaMina(x, y) {
+                mina = new Sprite();
+                mina.x = x;
+                mina.y = y;
+                mina.vy = 250;
+                mina.vx = 0;
+                mina.raio = 25;
+                mina.desenhar = function () {
+                    ctx.drawImage(imgMine, this.x - this.raio, this.y - this.raio, 2 * this.raio, 2 * this.raio);
+                };
+                return mina;
+            }
+            //cria a mina em uma posicao aleatoria            
+            criaMina(Math.random() * 450, -50);
+
+            function criaVida() {
+                vida = new Sprite();
+                var i = inimigos.length;
+                if (i !== 0 && inimigos[0].y > 1000) {
+                    vida.x = inimigos[0].x;
+                    vida.y = inimigos[0].y;
+                } else {
+                    vida.x = Math.random() * 450;
+                    vida.y = -100;
+
+                }
+                existe = 0;
+                vida.raio = 10;
+                vida.vy = 250;
+                vida.restricoes = function () {
+                    if (this.y > tela.height + 15) {
+                        this.x = Math.random() * 450;
+                        this.y = -10;
+                        this.vx = 10;
+                    }
+
+                };
+                vida.desenhar = function () {
+                    ctx.drawImage(imgVida, this.x - this.raio, this.y - this.raio, 2 * this.raio, 2 * this.raio);
+                };
+                return vida;
+            }
+
+            function criaInimigo(x, y) {
+                var inimigo = new Sprite();
+                inimigo.x = x;
+                inimigo.y = y;
+                inimigo.ay = 100;
+                var i = Math.floor(Math.random() * 3);
+                inimigo.restricoes = function () {
+                    if (this.y > tela.height + 15) {
+                        this.x = pc.x + 50 - Math.random() * 100;
+                        this.y = -30 - Math.random() * 450;
+                        this.vy = 50 - Math.random() * 20;
+                        this.vx = 250;
+                    }
+                    this.ax = 0.8 * (pc.x - this.x);
+                };
+                inimigo.desenhar = function () {
+                    ctx.drawImage(imgInimigos[i], this.x - this.raio, this.y - this.raio, 2 * this.raio, 2 * this.raio);
+                };
+                return inimigo;
+            }
+
+            // a cada 20 segundo pela inTemp é iniciado um novo nivel
+            function nivel(k) {
+                mult++;
+                for (var i = 0; i < k * 2; i++) {
+                    inimigos.push(criaInimigo(100 + 20 * i, -40 * i));
+                }
+                k++;
+            }
+            //starta com o nivel 5
+            nivel(5);
+
+            function criaTiros() {
+                var tiro = new Sprite();
+                tiro.y = -12000;
+                tiro.raio = 4;
+                tiro.cor = 'yellow';
+                tiro.col = 0;
+                tiro.restricoes = function () {};
+                tiro.desenhar = function () {
+                    ctx.drawImage(imgTiros,
+                            Math.floor(this.col) * 22, 0, 24, 22,
+                            this.x - this.raio, this.y - this.raio, 2 * this.raio, 2 * this.raio);
+                    if (this.col >= 4) {
+                        this.col = 0;
+                    } else {
+                        this.col += 15 * dt;
+                    }
+                };
+                return tiro;
+            }
+            //preenche o vetor de tiros
+            tiros.push(criaTiros());
+
+            pc.desenhar = function () {
+                if (this.danificado > 0) {
+                    ctx.strokeStyle = 'hsl(' + (this.danificado) / 2 * 120 + ',50%,50%)';
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.raio, 0, 2 * Math.PI);
+                    ctx.closePath();
+                    ctx.stroke();
+
+                } else {
+
+                    ctx.fillStyle = this.cor;
+                }
+                this.danificado -= dt;
+                ctx.drawImage(nave, this.x - this.raio, this.y - this.raio, 2 * this.raio, 2 * this.raio);
+
+            };
+
+            function gameOver() {
+                ctx.clearRect(0, 0, tela.width, tela.height);
+                ctx.font = "80pt Arial";
+                ctx.fillStyle = "black";
+                ctx.strokeStyle = "black";
+                ctx.fillText("Game Over", (tela.width / 2) - 250, 300, 500);
+            }
+
+            //funcao para pausar o jogo
+            var gamePaused = false;
+            function pause() {
+                if (!gamePaused) {
+                    jogo = clearInterval(jogo);
+                    gamePaused = true;
+                } else if (gamePaused) {
+                    jogo = setInterval(passo, 1000 / fps);
+                    gamePaused = false;
+                }
+            }
+var lin = 0;
+            function passo() {
+
+                pc.mover();
+
+                for (var i in inimigos) {
+                    inimigos[i].mover();
+                }
+
+                mina.mover();
+                if (existe === 0)
+                    vida.mover();
+                for (var j in tiros) {
+                    tiros[j].mover();
+                }
+                if (existe === 0)
+                    vida.restricoes();
+                pc.restricoes();
+
+                for (var i in inimigos) {
+                    inimigos[i].restricoes();
+                }
+                for (var j in tiros) {
+                    tiros[j].restricoes();
+                }
+                //Limpar a tela
+                ctx.clearRect(0, 0, tela.width, tela.height);
+                if (inTemp <= 0) {
+                    nivel(k++);
+
+                    inTemp = 20;
+                }
+
+                
+                /*ctx.drawImage(star, 0, 0, 500, 500, 0, 0+lin, 500, 500);
+                ctx.drawImage(star, 0, 0, 500, 500, 0, 0+lin-500, 500, 500);
+                if (lin >= 500) {
+                    lin = 0;
+                } else {
+                    lin += 50 * dt;
+                }*/
+
+                for (var i in inimigos) {
+                    inimigos[i].desenhar();
+                }
+                for (var j in tiros) {
+                    tiros[j].desenhar();
+                }
+                pc.desenhar();
+
+                if (pc.vidas > 0) {
+                    for (var i in inimigos) {
+
+                        if (pc.danificado <= 0 && pc.colidiuComCircular(inimigos[i])) {
+                            pc.vidas--;
+                            pc.danificado = 2;
+                            inimigos[i].y = 1200;
+                        }
+                        for (var j in tiros) {
+
+                            if (tiros[j].colidiuComCircular(inimigos[i])) {
+                                tiros[j].y = -1200;
+                                inimigos[i].y = 1200;
+
+                                excluir.push(inimigos[i]);
+
+                                pc.pontos += 10 * mult;
+                            }
+                        }
+                    }
+                } else {
+                    mina.vy = 0;
+                    if (existe === 0) {
+                        vida.vy = 0;
+                        vida.vx = 0;
+                    }
+                    gameOver();
+                }
+                if (existe === 0) {
+                    if (pc.colidiuComCircular(vida)) {
+                        pc.vidas++;
+                        existe = 1;
+                        vida = new Sprite();
+                        vida.temp = 10;
+                    }
+                }
+                if (pc.colidiuComCircular(mina))
+                {
+                    mina.desenhar = function () {
+                        ctx.drawImage(imgExplosao, this.x - this.raio, this.y - this.raio, 2 * this.raio, 2 * this.raio);
+                    };
+                    pc.vidas = 0;
+                }
+                desenhaPlacar();
+                
+                //escreve as waves
+                if (pc.vidas > 0) {
+                    var niv = mult + 1;
+                    if (mult === 1) {
+                        if (inTemp <= 20 && inTemp >= 17)
+                            desenhaNivel(mult);
+                    }
+                    if (inTemp <= 3 && inTemp >= 1) {
+                        desenhaNivel(niv);
+                    }
+                }
+
+
+                for (var e in excluir) {
+                    inimigos.splice(inimigos.indexOf(excluir[e]), 1);
+                }
+                excluir = [];
+                mina.desenhar();
+                if (existe === 0)
+                    vida.desenhar();
+                if (mina.y > 510) {
+                    criaMina(Math.random() * 450, -50);
+                }
+
+                if (vida.temp <= 0) {
+                    vida.temp = 10;
+                    if (existe !== 0)
+                        criaVida();
+                }
+                vida.temp -= dt;
+                pc.canhao -= dt;
+                inTemp -= dt;
+                for (t in tiros) {
+                    if (tiros[t].y < 0)
+                        tiros.splice(t, 1);
+                }
+            }
+
+            function teclaPressionada(e) {
+                console.log("Tecla Pressionada: " + e.keyCode);
+                switch (e.keyCode) {
+                    case 32:
+                        if (pc.canhao <= 0) {
+                            var tiro = criaTiros();
+                            tiros.push(tiro);
+                            tiro.x = pc.x;
+                            tiro.y = pc.y;
+                            tiro.vy = -200;
+                            pc.canhao = 0.125;
+                        }
+
+                        break;
+                    case 37:
+                        pc.ax = -300;
+                        break;
+                    case 39:
+                        pc.ax = 300;
+                        break;
+                    case 38:
+                        pc.ay = -300;
+                        break;
+                    case 40:
+                        pc.ay = 300;
+                        break;
+                    case 80:
+                        pause();
+                        break;
+                }
+            }
+            function teclaSolta(e) {
+                console.log("Tecla Solta: " + e.keyCode);
+                switch (e.keyCode) {
+                    case 37:
+                    case 39:
+                        pc.ax = 0;
+                        break;
+                    case 38:
+                    case 40:
+                        pc.ay = 0;
+                        break;
+                }
+            }
+            function desenhaPlacar() {
+                ctx.fillStyle = "white";
+                ctx.strokeStyle = "white";
+                ctx.lineWidth = 1;
+                ctx.font = "15px Arial";
+                escreve("Vidas: " + pc.vidas, 10, 30);
+                escreve("Pontos: " + pc.pontos, 10, 50);
+                escreve("Proxima Wave: " +Math.round(inTemp),10,70);
+                escreve("P para pausar", 10, 90);
+            }
+            
+            function desenhaNivel(k) {
+                ctx.fillStyle = "black";
+                ctx.strokeStyle = "black";
+                ctx.font = "70px Arial";
+                ctx.lineWidth = 1;
+                escreve(k + "ª Wave", 380 - (tela.width / 2), (tela.height / 2));
+            }
+            
+            function escreve(texto, x, y) {
+                ctx.fillText(texto, x, y);
+                ctx.strokeText(texto, x, y);
+            }
+
+            var jogo = setInterval(passo, 1000 / fps);
+            addEventListener("keydown", teclaPressionada);
+            addEventListener("keyup", teclaSolta);
+        </script>
+    </body>
+</html>
